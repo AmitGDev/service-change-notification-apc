@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 
 set(PROJECT_NAME_INPUT "Project" CACHE STRING "Project name")
 set(PROJECT_DESCRIPTION_INPUT "C++ Project" CACHE STRING "Project description")
-set(PROJECT_VERSION_INPUT "1.0.0" CACHE STRING "Project version")
+set(PROJECT_VERSION_INPUT "0.1.0" CACHE STRING "Project version")
 
 project(${PROJECT_NAME_INPUT}
     VERSION ${PROJECT_VERSION_INPUT}
@@ -12,7 +12,7 @@ project(${PROJECT_NAME_INPUT}
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# ---- C++ standard ----
+# ---- C++ standards ----
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -27,14 +27,20 @@ add_executable(${PROJECT_NAME}
     ${PROJECT_SOURCES}
 )
 
-if(WIN32)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE
-        UNICODE
-        _UNICODE
-        NOMINMAX
-        WIN32_LEAN_AND_MEAN
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    UNICODE
+    _UNICODE
+    NOMINMAX
+    WIN32_LEAN_AND_MEAN
+    _WIN32_WINNT=0x0A00
 )
-endif()
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    Advapi32
+    Dbghelp
+    Shell32
+    Wtsapi32
+)
 
 # ---- MSVC runtime ----
 if(MSVC)
@@ -65,16 +71,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 # ---- Install ----
 install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION bin
-)
-
-# ---- compile_commands.json for clangd ----
-# clangd only reads from a single CompilationDatabase directory (see .clangd),
-# so mirror whichever preset was just built to a fixed root-level location.
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_BINARY_DIR}/compile_commands.json
-        ${CMAKE_SOURCE_DIR}/build/compile_commands.json
-    COMMENT "Syncing compile_commands.json for clangd"
 )
 
 # ---- Configuration summary ----
